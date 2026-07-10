@@ -232,7 +232,7 @@ When a CallKit call is active during backgrounding, chat suspension is deferred 
 
 ### Remote Desktop Exception
 
-When a desktop remote-control session is connected, the mobile app remains the local UI owner and shows a small Wi-Fi-style indicator on the chat list toolbar. Dismissing the connect sheet after verification does not disconnect the session, and allowed chat events are delivered to both the local and desktop queues.
+When a desktop remote-control session is connected, the mobile app remains the local UI owner and shows a small Wi-Fi-style indicator on the chat list toolbar. Dismissing the connect sheet after verification does not disconnect the session, and allowed chat events are delivered to the local queue and to the desktop queue while it has capacity. If the desktop queue is full, the remote-control session is stopped rather than leaving either side stale.
 
 On iOS 26 and later, `RemoteCtrlBGKeepAlive` submits a continued-processing task when the user verifies a desktop session. Earlier iOS versions use a `UIApplication` background task when the app backgrounds. Expiration stops the remote-control session; a rejected iOS 26 task does not use the legacy fallback.
 

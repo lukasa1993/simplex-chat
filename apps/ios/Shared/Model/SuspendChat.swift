@@ -195,6 +195,7 @@ final class RemoteCtrlBGKeepAlive {
     static let shared = RemoteCtrlBGKeepAlive()
 
     private var registered = false
+    private var stopping = false
     private var continuedTask: BGTask?
     private var legacyTask: UIBackgroundTaskIdentifier = .invalid
 
@@ -233,14 +234,38 @@ final class RemoteCtrlBGKeepAlive {
         finish(success: true)
     }
 
+    func explicitDisconnect() async throws {
+        guard !stopping else { return }
+        stopping = true
+        defer { stopping = false }
+        do {
+            try await stopRemoteCtrl()
+            clearRemoteCtrlSessionAfterStop()
+            finish(success: true)
+        } catch {
+            finish(success: false)
+            throw error
+        }
+    }
+
     private func expire() async {
+        guard !stopping else {
+            finish(success: false)
+            return
+        }
+        stopping = true
+        defer { stopping = false }
         try? await stopRemoteCtrl()
+        clearRemoteCtrlSessionAfterStop()
+        finish(success: false)
+    }
+
+    private func clearRemoteCtrlSessionAfterStop() {
         if case .connected = ChatModel.shared.remoteCtrlSession?.sessionState {
             switchToLocalSession()
         } else {
             ChatModel.shared.remoteCtrlSession = nil
         }
-        finish(success: false)
     }
 
     @available(iOS 26.0, *)

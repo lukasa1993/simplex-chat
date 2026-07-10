@@ -1709,7 +1709,9 @@ toView_ ev = do
   atomically $
     readTVar session >>= \case
       Just (_, RCSessionConnected {remoteOutputQ})
-        | either (const True) allowRemoteEvent event -> writeTBQueue remoteOutputQ event
+        | either (const True) allowRemoteEvent event -> do
+            writeTBQueue remoteOutputQ event
+            writeTBQueue localQ (Nothing, event)
       -- TODO potentially, it should hold some events while connecting
       _ -> writeTBQueue localQ (Nothing, event)
 

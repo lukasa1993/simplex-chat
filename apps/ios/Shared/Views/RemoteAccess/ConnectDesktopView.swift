@@ -297,10 +297,6 @@ struct ConnectDesktopView: View {
 
             Section {
                 disconnectButton()
-            } footer: {
-                // This is specific to iOS
-                Text("Keep the app open to use it from desktop")
-                    .foregroundColor(theme.colors.secondary)
             }
         }
         .navigationTitle("Connected to desktop")
@@ -475,6 +471,9 @@ struct ConnectDesktopView: View {
                 let rc = try await verifyRemoteCtrlSession(sessCode)
                 await MainActor.run {
                     m.remoteCtrlSession = m.remoteCtrlSession?.updateState(.connected(remoteCtrl: rc, sessionCode: sessCode))
+                    if #available(iOS 26.0, *) {
+                        RemoteCtrlBGKeepAlive.shared.startContinuedProcessing()
+                    }
                 }
                 await MainActor.run {
                     updateRemoteCtrls()
@@ -500,6 +499,7 @@ struct ConnectDesktopView: View {
             do {
                 try await stopRemoteCtrl()
                 await MainActor.run {
+                    RemoteCtrlBGKeepAlive.shared.stopKeepingSession()
                     if case .connected = m.remoteCtrlSession?.sessionState {
                         switchToLocalSession()
                     } else {

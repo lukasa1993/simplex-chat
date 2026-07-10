@@ -232,6 +232,8 @@ When a CallKit call is active during backgrounding, chat suspension is deferred 
 
 ### Remote Desktop Exception
 
+When a desktop remote-control session is connected, the mobile app remains the local UI owner and shows a small Wi-Fi-style indicator on the chat list toolbar. Dismissing the connect sheet after verification does not disconnect the session, and allowed chat events are delivered to both the local and desktop queues.
+
 On iOS 26 and later, `RemoteCtrlBGKeepAlive` submits a continued-processing task when the user verifies a desktop session. Earlier iOS versions use a `UIApplication` background task when the app backgrounds. Expiration stops the remote-control session; a rejected iOS 26 task does not use the legacy fallback.
 
 ---
@@ -258,16 +260,17 @@ The Share Extension (`SimpleX SE/`) allows sharing content (text, images, files)
 
 ---
 
-## [7. Remote Desktop Control](../Shared/Views/RemoteAccess/ConnectDesktopView.swift#L1-L544)
+## [7. Remote Desktop Control](../Shared/Views/RemoteAccess/ConnectDesktopView.swift#L1-L536)
 
 Optional desktop pairing allows controlling the mobile app from a desktop client:
 
 - **Pairing**: Encrypted QR code scanned by desktop client establishes a session
 - **Commands**: [`connectRemoteCtrl`](../Shared/Model/SimpleXAPI.swift#L1613), [`findKnownRemoteCtrl`](../Shared/Model/SimpleXAPI.swift#L1620), [`confirmRemoteCtrl`](../Shared/Model/SimpleXAPI.swift#L1624), [`verifyRemoteCtrlSession`](../Shared/Model/SimpleXAPI.swift#L1630), [`listRemoteCtrls`](../Shared/Model/SimpleXAPI.swift#L1636), [`stopRemoteCtrl`](../Shared/Model/SimpleXAPI.swift#L1642), [`deleteRemoteCtrl`](../Shared/Model/SimpleXAPI.swift#L1646)
 - **State**: [`ChatModel.remoteCtrlSession`](../Shared/Model/ChatModel.swift#L395)`: RemoteCtrlSession?` tracks the active session
+- **Connected behavior**: Once verified, the connect sheet dismisses, the chat list toolbar shows a small desktop indicator that opens the desktop connection page, and explicit Disconnect remains the user-controlled stop path
 - **Background keepalive**: `RemoteCtrlBGKeepAlive` uses continued processing on iOS 26 and the system-granted `UIApplication` background task on earlier versions
 - **Transport**: Encrypted reverse HTTP transport between mobile and desktop
-- **Source**: [`Shared/Views/RemoteAccess/ConnectDesktopView.swift`](../Shared/Views/RemoteAccess/ConnectDesktopView.swift#L1-L544), [`RemoteCtrlBGKeepAlive`](../Shared/Model/SuspendChat.swift#L191-L284), see `Remote.hs` in `../../src/Simplex/Chat/`
+- **Source**: [`Shared/Views/RemoteAccess/ConnectDesktopView.swift`](../Shared/Views/RemoteAccess/ConnectDesktopView.swift#L1-L536), [`RemoteCtrlBGKeepAlive`](../Shared/Model/SuspendChat.swift#L191-L309), see `Remote.hs` and `Controller.hs` in `../../src/Simplex/Chat/`
 
 ---
 

@@ -89,7 +89,9 @@ struct ConnectDesktopView: View {
             updateRemoteCtrls()
             showConnectScreen = !useMulticast
             if m.remoteCtrlSession != nil {
-                disconnectDesktop()
+                if !m.activeRemoteCtrl {
+                    disconnectDesktop()
+                }
             } else if useMulticast {
                 findKnownDesktop()
             }
@@ -103,16 +105,13 @@ struct ConnectDesktopView: View {
             }
         }
         .onDisappear {
-            if m.remoteCtrlSession != nil {
+            if m.remoteCtrlSession != nil && !m.activeRemoteCtrl {
                 showConnectScreen = false
                 disconnectDesktop()
             }
         }
         .onChange(of: deviceName) {
             setDeviceName($0)
-        }
-        .onChange(of: m.activeRemoteCtrl) {
-            UIApplication.shared.isIdleTimerDisabled = $0
         }
         .alert(item: $alert) { a in
             switch a {
@@ -145,7 +144,7 @@ struct ConnectDesktopView: View {
                 mkAlert(title: title, message: error)
             }
         }
-        .interactiveDismissDisabled(m.activeRemoteCtrl)
+        .interactiveDismissDisabled(m.remoteCtrlSession != nil && !m.activeRemoteCtrl)
     }
 
     private func connectDesktopView(showScanner: Bool = true) -> some View {
@@ -474,9 +473,8 @@ struct ConnectDesktopView: View {
                     if #available(iOS 26.0, *) {
                         RemoteCtrlBGKeepAlive.shared.startContinuedProcessing()
                     }
-                }
-                await MainActor.run {
                     updateRemoteCtrls()
+                    dismiss()
                 }
             } catch let error {
                 await MainActor.run {
@@ -497,14 +495,8 @@ struct ConnectDesktopView: View {
     private func disconnectDesktop(_ action: UserDisconnectAction? = nil) {
         Task {
             do {
-                try await stopRemoteCtrl()
+                try await RemoteCtrlBGKeepAlive.shared.explicitDisconnect()
                 await MainActor.run {
-                    RemoteCtrlBGKeepAlive.shared.stopKeepingSession()
-                    if case .connected = m.remoteCtrlSession?.sessionState {
-                        switchToLocalSession()
-                    } else {
-                        m.remoteCtrlSession = nil
-                    }
                     switch action {
                     case .back: dismiss()
                     case .dismiss: dismiss()

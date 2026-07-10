@@ -200,12 +200,14 @@ remoteMessageTest :: HasCallStack => ((Bool, Bool), TestParams) -> IO ()
 remoteMessageTest = testRemote3 $ \compress mobile desktop bob -> do  
   startRemote compress mobile desktop
   contactBob desktop bob
+  mobile <## "bob (Bob): contact is connected"
 
   logNote "sending messages"
   desktop #> "@bob hello there 🙂"
   bob <# "alice> hello there 🙂"
   bob #> "@alice hi"
   desktop <# "bob> hi"
+  mobile <# "bob> hi"
 
   logNote "post-remote checks"
   stopMobile mobile desktop
